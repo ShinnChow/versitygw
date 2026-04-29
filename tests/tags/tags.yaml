@@ -84,6 +84,8 @@ tags:
       desc: "DeleteBucketTagging command"
     DeleteObject:
       desc: "DeleteObject command"
+    DeleteObjects:
+      desc: "DeleteObjects command"
     DeleteObjectTagging:
       desc: "DeleteObjectTagging command"
     GetBucketAcl:
