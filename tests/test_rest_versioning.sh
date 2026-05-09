@@ -24,19 +24,14 @@ source ./tests/drivers/create_bucket/create_bucket_rest.sh
 source ./tests/drivers/list_buckets/list_buckets_rest.sh
 source ./tests/util/util_rest.sh
 
-test_file="test_file"
-
 # tags: curl, versioning, PutBucketVersioning
 @test "REST - check, enable, suspend versioning" {
   if [ "$RECREATE_BUCKETS" == "false" ]; then
     skip "cannot change versioning status for static buckets"
   fi
-  run get_bucket_name "$BUCKET_ONE_NAME"
+  run setup_bucket_and_file_v3 "$BUCKET_ONE_NAME"
   assert_success
-  bucket_name="$output"
-
-  run setup_bucket_v2 "$bucket_name"
-  assert_success
+  read -r bucket_name test_file <<< "$output"
 
   run check_versioning_status_rest "$bucket_name" ""
   assert_success
@@ -59,12 +54,9 @@ test_file="test_file"
   if [ "$RECREATE_BUCKETS" == "false" ]; then
     skip "cannot change versioning status for static buckets"
   fi
-  run get_bucket_name "$BUCKET_ONE_NAME"
+  run setup_bucket_and_file_v3 "$BUCKET_ONE_NAME"
   assert_success
-  bucket_name="$output"
-
-  run setup_bucket_and_file_v2 "$bucket_name" "$test_file"
-  assert_success
+  read -r bucket_name test_file <<< "$output"
 
   run put_object "rest" "$TEST_FILE_FOLDER/$test_file" "$bucket_name" "$test_file"
   assert_success
@@ -90,12 +82,9 @@ test_file="test_file"
   if [ "$RECREATE_BUCKETS" == "false" ]; then
     skip "cannot change versioning status for static buckets"
   fi
-  run get_bucket_name "$BUCKET_ONE_NAME"
+  run setup_bucket_and_file_v3 "$BUCKET_ONE_NAME"
   assert_success
-  bucket_name="$output"
-
-  run setup_bucket_and_file_v2 "$bucket_name" "$test_file"
-  assert_success
+  read -r bucket_name test_file <<< "$output"
 
   run put_object "rest" "$TEST_FILE_FOLDER/$test_file" "$bucket_name" "$test_file"
   assert_success
@@ -112,12 +101,9 @@ test_file="test_file"
 
 # tags: curl, versioning, PutBucketVersioning, PutObject, DeleteObject, GetObject
 @test "versioning - retrieve after delete" {
-  run get_bucket_name "$BUCKET_ONE_NAME"
+  run setup_bucket_and_file_v3 "$BUCKET_ONE_NAME"
   assert_success
-  bucket_name="$output"
-
-  run setup_bucket_and_file_v2 "$bucket_name" "$test_file"
-  assert_success
+  read -r bucket_name test_file <<< "$output"
 
   run put_object "rest" "$TEST_FILE_FOLDER/$test_file" "$bucket_name" "$test_file"
   assert_success
@@ -144,6 +130,10 @@ test_file="test_file"
   run setup_bucket_object_lock_enabled_v2 "$bucket_name"
   assert_success
 
+  run get_file_name
+  assert_success
+  test_file="$output"
+
   run create_test_files "$test_file"
   assert_success
 
@@ -168,6 +158,10 @@ test_file="test_file"
 
   run setup_bucket_object_lock_enabled_v2 "$bucket_name"
   assert_success
+
+  run get_file_name
+  assert_success
+  test_file="$output"
 
   run create_test_files "$test_file"
   assert_success

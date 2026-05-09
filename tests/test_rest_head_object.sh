@@ -41,7 +41,7 @@ source ./tests/drivers/get_object_attributes/get_object_attributes_rest.sh
   assert_success
   expected_etag=$output
 
-  run get_etag_attribute_rest "$bucket_name" "$test_file" "$expected_etag"
+  run check_etag_attribute_rest "$bucket_name" "$test_file" "$expected_etag"
   assert_success
 }
 
