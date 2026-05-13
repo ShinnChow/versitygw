@@ -4496,6 +4496,19 @@ func (p *Posix) GetObject(ctx context.Context, input *s3.GetObjectInput) (*s3.Ge
 	if !strings.HasSuffix(object, "/") && fid.IsDir() {
 		return nil, s3err.GetAPIError(s3err.ErrNoSuchKey)
 	}
+	if fid.IsDir() {
+		// Only directories explicitly created via S3 (put-object with key ending
+		// in '/') have an etag attribute. Directories created incidentally on the
+		// filesystem or as parent directories during object upload should not be
+		// accessible via get-object.
+		_, derr := p.meta.RetrieveAttribute(nil, bucket, object, etagkey)
+		if errors.Is(derr, meta.ErrNoSuchKey) || errors.Is(derr, fs.ErrNotExist) {
+			return nil, s3err.GetAPIError(s3err.ErrNoSuchKey)
+		}
+		if derr != nil {
+			return nil, fmt.Errorf("get dir etag: %w", derr)
+		}
+	}
 
 	if p.versioningEnabled() {
 		isDelMarker, err := p.isObjDeleteMarker(bucket, object)
@@ -4820,6 +4833,19 @@ func (p *Posix) HeadObject(ctx context.Context, input *s3.HeadObjectInput) (*s3.
 	}
 	if !strings.HasSuffix(object, "/") && fi.IsDir() {
 		return nil, s3err.GetAPIError(s3err.ErrNoSuchKey)
+	}
+	if fi.IsDir() {
+		// Only directories explicitly created via S3 (put-object with key ending
+		// in '/') have an etag attribute. Directories created incidentally on the
+		// filesystem or as parent directories during object upload should not be
+		// accessible via head-object.
+		_, derr := p.meta.RetrieveAttribute(nil, bucket, object, etagkey)
+		if errors.Is(derr, meta.ErrNoSuchKey) || errors.Is(derr, fs.ErrNotExist) {
+			return nil, s3err.GetAPIError(s3err.ErrNoSuchKey)
+		}
+		if derr != nil {
+			return nil, fmt.Errorf("get dir etag: %w", derr)
+		}
 	}
 
 	if p.versioningEnabled() {
