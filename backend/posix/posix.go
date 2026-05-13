@@ -1828,8 +1828,8 @@ func (p *Posix) CompleteMultipartUploadWithCopy(ctx context.Context, input *s3.C
 		// multipart upload may have been finalized and the final object has been created
 		// before or by the racing request
 		if mpMetaBytes, statErr := p.meta.RetrieveAttribute(nil, bucket, object, mpMetaKey); statErr == nil {
-			var mpMeta backend.MpUploadMetadata
-			if err := json.Unmarshal(mpMetaBytes, &mpMeta); err != nil {
+			mpMeta, err := backend.UnmarshalMpUploadMetadata(mpMetaBytes, false)
+			if err != nil {
 				return res, "", fmt.Errorf("parse object multipart metadata: %w", err)
 			}
 
@@ -2245,12 +2245,12 @@ func (p *Posix) CompleteMultipartUploadWithCopy(ctx context.Context, input *s3.C
 	// Store multipart upload metadata on the final object so that GetObject /
 	// HeadObject can serve individual parts by part-number.
 	mpMeta := backend.MpUploadMetadata{UploadID: uploadID, Parts: partSizes}
-	mpMetaJSON, err := json.Marshal(mpMeta)
+	mpMetaBytes, err := backend.MarshalMpUploadMetadata(mpMeta, false)
 	if err != nil {
 		return res, "", fmt.Errorf("marshal object multipart metadata: %w", err)
 	}
 
-	err = p.meta.StoreAttribute(f.File(), bucket, object, mpMetaKey, mpMetaJSON)
+	err = p.meta.StoreAttribute(f.File(), bucket, object, mpMetaKey, mpMetaBytes)
 	if err != nil {
 		return res, "", fmt.Errorf("set object multipart metadata: %w", err)
 	}
@@ -4654,8 +4654,8 @@ func (p *Posix) GetObject(ctx context.Context, input *s3.GetObjectInput) (*s3.Ge
 	if input.PartNumber != nil {
 		mpMetaBytes, metaErr := p.meta.RetrieveAttribute(nil, bucket, object, mpMetaKey)
 		if metaErr == nil {
-			var mpMeta backend.MpUploadMetadata
-			if err := json.Unmarshal(mpMetaBytes, &mpMeta); err != nil {
+			mpMeta, err := backend.UnmarshalMpUploadMetadata(mpMetaBytes, false)
+			if err != nil {
 				return nil, fmt.Errorf("parse object multipart metadata: %w", err)
 			}
 
@@ -4911,8 +4911,8 @@ func (p *Posix) HeadObject(ctx context.Context, input *s3.HeadObjectInput) (*s3.
 	if input.PartNumber != nil {
 		mpMetaBytes, metaErr := p.meta.RetrieveAttribute(nil, bucket, object, mpMetaKey)
 		if metaErr == nil {
-			var mpMeta backend.MpUploadMetadata
-			if err := json.Unmarshal(mpMetaBytes, &mpMeta); err != nil {
+			mpMeta, err := backend.UnmarshalMpUploadMetadata(mpMetaBytes, false)
+			if err != nil {
 				return nil, fmt.Errorf("parse object multipart metadata: %w", err)
 			}
 
